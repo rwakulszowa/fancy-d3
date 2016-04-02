@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.bar {
+fill: mediumaquamarine;
+}
+
+.bar:hover {
+  fill: turquoise ;
+}
+
+</style>
+<body>
+<script src="https://d3js.org/d3.v3.min.js"></script>
+<script>
+
+var margin = {top: 40, right: 10, bottom: 20, left: 10},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+var x = d3.scale.ordinal()
+    .rangeRoundBands([0, width], .1);
+
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var color = d3.scale.category20c();
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+d3.tsv("./data.tsv", function(error, data) {
+  if (error) throw error;
+
+  x.domain(data.map(function(d) { return d.letter; }));
+  y.domain([0, d3.max(data, function(d) { return d.frequency; })]);
+
+  svg.selectAll(".bar")
+      .data(data)
+    .enter().append("rect")
+      .attr("class", "bar")
+      .attr("x", function(d) { return x(d.letter); })
+      .attr("y", function(d) { return y(d.frequency); })
+      .attr("width", x.rangeBand())
+      .attr("height", function(d) { return height -  y(d.frequency); });
+
+});
+
+</script>
