@@ -10,12 +10,23 @@ fill: mediumaquamarine;
   fill: turquoise ;
 }
 
+.axis text {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
 </style>
 <body>
 <script src="https://d3js.org/d3.v3.min.js"></script>
 <script>
 
-var margin = {top: 40, right: 10, bottom: 20, left: 10},
+var margin = {top: 20, right: 30, bottom: 30, left: 40},
     width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 
@@ -24,6 +35,14 @@ var x = d3.scale.ordinal()
 
 var y = d3.scale.linear()
     .range([height, 0]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
 
 var color = d3.scale.category20c();
 
@@ -48,6 +67,14 @@ d3.tsv("./data.tsv", function(error, data) {
       .attr("width", x.rangeBand())
       .attr("height", function(d) { return height -  y(d.frequency); });
 
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis);
 });
 
 </script>
