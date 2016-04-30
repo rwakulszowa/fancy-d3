@@ -2,12 +2,12 @@
 <meta charset="utf-8">
 <style>
 
-.circle,
+.dot,
 .bar {
 fill: mediumaquamarine;
 }
 
-.circle:hover,
+.dot:hover,
 .bar:hover {
   fill: turquoise ;
   stroke: #000;
@@ -29,6 +29,7 @@ fill: mediumaquamarine;
 <script src="https://d3js.org/d3.v3.min.js"></script>
 <script>
 
+// d3 and svg setup
 var margin = {top: 20, right: 30, bottom: 30, left: 40},
     width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom,
@@ -48,39 +49,56 @@ var svg = d3.select("body").append("svg")
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+var xAxisG = svg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height + ")");
+
+var yAxisG = svg.append("g")
+    .attr("class", "y axis");
+
+// fancy-d3 specific variables
+var configs = [
+  { "x": "letter", "y": "frequency", "plotType": "linOrd" },
+  { "x": "frequency", "y": "letter", "plotType": "ordLin" }
+];
+
+var i = 0;
+
+// main d3 function
 d3.tsv("./data.tsv", function(error, data) {
   if (error) throw error;
 
-  plot(
-    svg,
-    data,
-    "linOrd",
-    function(d) { return d.letter; },
-    function(d) { return d.frequency; }
-  );
+  //TODO: data preprocessing, bind each row with type (linear, ordinal, date), provide aggregates
+  //TODO: fancy data container
+  //TODO: cache results of sort, map, reduce etc.
+  //TODO: convert it all to a set of classes
 
-  svg.append("g")
-      .attr("class", "x axis")
-      .attr("transform", "translate(0," + height + ")")
-      .call(xAxis);
-
-  svg.append("g")
-      .attr("class", "y axis")
-      .call(yAxis);
-
+  (function change() {
+    svg.selectAll(".dot,rect").remove();  //TODO: keep all selections in a "global" object
+    i = ++i % configs.length;  //TODO: use a circular array iterator
+    conf = configs[i];
+    plot(
+      svg,
+      data,
+      conf.plotType,  //TODO: guess from datatype
+      function(d) { return d[conf.x]; },
+      function(d) { return d[conf.y]; }
+    );
+    setTimeout(change, 4900);
+  })();
 });
 
-function plot(svg, data, type, letterKey, freqKey) {
-
+function plot(svg, data, type, xKey, yKey) {
+  //TODO: automatic data type discovery, auto aggregates
   switch (type) {
     case "linOrd":
-      plotOrdLin(svg, data, letterKey, freqKey);
+      plotOrdLin(svg, data, xKey, yKey);
       break;
     case "ordLin":
-      plotLinOrd(svg, data, freqKey, letterKey);
+      plotLinOrd(svg, data, xKey, yKey);
       break;
   }
-
+  //TODO: transitions, clickable axes, clickable chart? (switching chart type?)
 }
 
 function plotLinOrd(svg, data, xKey, yKey) {
@@ -92,16 +110,26 @@ function plotLinOrd(svg, data, xKey, yKey) {
       .rangeRoundBands([0, height], .1)
       .domain(data.map(function(d) { return yKey(d); }).sort());
 
+  //TODO: move axis handling to a separate function
   xAxis.scale(x);
   yAxis.scale(y);
+  xAxisG.call(xAxis);
+  yAxisG.call(yAxis);
 
-  svg.selectAll(".circle")
+  // Update
+  var dots = svg.selectAll(".dot")
       .data(data)
-    .enter().append("circle")
-      .attr("class", "circle")
+      .attr("cy", function(d) { return y(yKey(d)) + radius / 2; });
+
+  // Enter
+  dots.enter().append("circle")
+      .attr("class", "dot")
       .attr("cx", function(d) { return x(xKey(d)); })
       .attr("cy", function(d) { return y(yKey(d)) + radius / 2; })
       .attr("r", radius);
+
+  // Remove
+  dots.exit().remove();
 }
 
 function plotOrdLin(svg, data, xKey, yKey) {
@@ -115,15 +143,25 @@ function plotOrdLin(svg, data, xKey, yKey) {
 
   xAxis.scale(x);
   yAxis.scale(y);
+  xAxisG.call(xAxis);
+  yAxisG.call(yAxis);
 
-  svg.selectAll(".bar")
+  // Update
+  var bars = svg.selectAll(".bar")
       .data(data)
-    .enter().append("rect")
+      .attr("x", function(d) { return x(xKey(d)); })
+      .attr("width", x.rangeBand());
+
+  // Enter
+  bars.enter().append("rect")
       .attr("class", "bar")
       .attr("x", function(d) { return x(xKey(d)); })
       .attr("y", function(d) { return y(yKey(d)); })
       .attr("width", x.rangeBand())
       .attr("height", function(d) { return height -  y(yKey(d)); });
+
+  // Remove
+  bars.exit().remove();
 }
 
 </script>
