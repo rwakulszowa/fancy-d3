@@ -61,7 +61,7 @@ d3.tsv("./data.tsv", function(error, data) {
   //TODO: convert it all to a set of classes
 
   (function change() {
-    clear(svg);
+    clear(svg.select(".plot"));
     i = ++i % configs.length;  //TODO: use a circular array iterator
     conf = configs[i];
     plot(
@@ -76,19 +76,22 @@ d3.tsv("./data.tsv", function(error, data) {
 });
 
 function plot(svg, data, type, xKey, yKey) {
+  var plot = svg.append("g")
+      .attr("class", "plot");
+
   //TODO: automatic data type discovery, auto aggregates
   switch (type) {
     case "linOrd":
-      plotOrdLin(svg, data, xKey, yKey);
+      plotOrdLin(plot, data, xKey, yKey);
       break;
     case "ordLin":
-      plotLinOrd(svg, data, xKey, yKey);
+      plotLinOrd(plot, data, xKey, yKey);
       break;
   }
   //TODO: transitions, clickable axes, clickable chart? (switching chart type?)
 }
 
-function plotLinOrd(svg, data, xKey, yKey) {
+function plotLinOrd(plot, data, xKey, yKey) {
   var x = d3.scale.linear()
       .range([0, width])
       .domain([0, d3.max(data, function(d) { return xKey(d); })]);
@@ -97,10 +100,10 @@ function plotLinOrd(svg, data, xKey, yKey) {
       .rangeRoundBands([0, height], .1)
       .domain(data.map(function(d) { return yKey(d); }).sort());
 
-  updateAxes(x, y, svg);
+  updateAxes(x, y, plot);
 
   // Update
-  var dots = svg.selectAll(".dot")
+  var dots = plot.selectAll(".dot")
       .data(data)
       .attr("cy", function(d) { return y(yKey(d)) + radius / 2; });
 
@@ -115,7 +118,7 @@ function plotLinOrd(svg, data, xKey, yKey) {
   dots.exit().remove();
 }
 
-function plotOrdLin(svg, data, xKey, yKey) {
+function plotOrdLin(plot, data, xKey, yKey) {
   var x = d3.scale.ordinal()
       .rangeRoundBands([0, width], .1)
       .domain((data.map(function(d) { return xKey(d); }).sort()));
@@ -124,10 +127,10 @@ function plotOrdLin(svg, data, xKey, yKey) {
       .range([height, 0])
       .domain([0, d3.max(data, function(d) { return yKey(d); })]);
 
-  updateAxes(x, y, svg);
+  updateAxes(x, y, plot);
 
   // Update
-  var bars = svg.selectAll(".bar")
+  var bars = plot.selectAll(".bar")
       .data(data)
       .attr("x", function(d) { return x(xKey(d)); })
       .attr("width", x.rangeBand());
@@ -144,7 +147,7 @@ function plotOrdLin(svg, data, xKey, yKey) {
   bars.exit().remove();
 }
 
-function updateAxes(xScale, yScale, svg) {
+function updateAxes(xScale, yScale, plot) {
   var xAxis = d3.svg.axis()
       .orient("bottom")
       .scale(xScale);
@@ -153,22 +156,20 @@ function updateAxes(xScale, yScale, svg) {
       .orient("left")
       .scale(yScale);
 
-  svg.append("g")
+  plot.append("g")
       .attr("class", "x axis")
       .attr("transform", "translate(0," + height + ")")
       .call(xAxis);
 
-  svg.append("g")
+  plot.append("g")
       .attr("class", "y axis")
       .call(yAxis);
 };
 
 function clear(svg) {
-    svg.selectAll("*")
-        .transition()
+    svg.transition()
         .duration(1000)
-        .attr("cx", 0)
-        .attr("x", 0)
+        .attr("transform", "translate(" + (width + margin.left + margin.right) + ", 0)")
         .remove();
 }
 
