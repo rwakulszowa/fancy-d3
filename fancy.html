@@ -35,12 +35,6 @@ var margin = {top: 20, right: 30, bottom: 30, left: 40},
     height = 500 - margin.top - margin.bottom,
     radius = 10;
 
-var xAxis = d3.svg.axis()
-    .orient("bottom");
-
-var yAxis = d3.svg.axis()
-    .orient("left");
-
 var color = d3.scale.category20c();
 
 var svg = d3.select("body").append("svg")
@@ -48,13 +42,6 @@ var svg = d3.select("body").append("svg")
     .attr("height", height + margin.top + margin.bottom)
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-var xAxisG = svg.append("g")
-    .attr("class", "x axis")
-    .attr("transform", "translate(0," + height + ")");
-
-var yAxisG = svg.append("g")
-    .attr("class", "y axis");
 
 // fancy-d3 specific variables
 var configs = [
@@ -74,7 +61,7 @@ d3.tsv("./data.tsv", function(error, data) {
   //TODO: convert it all to a set of classes
 
   (function change() {
-    svg.selectAll(".dot,rect").remove();  //TODO: keep all selections in a "global" object
+    clear(svg);
     i = ++i % configs.length;  //TODO: use a circular array iterator
     conf = configs[i];
     plot(
@@ -110,11 +97,7 @@ function plotLinOrd(svg, data, xKey, yKey) {
       .rangeRoundBands([0, height], .1)
       .domain(data.map(function(d) { return yKey(d); }).sort());
 
-  //TODO: move axis handling to a separate function
-  xAxis.scale(x);
-  yAxis.scale(y);
-  xAxisG.call(xAxis);
-  yAxisG.call(yAxis);
+  updateAxes(x, y, svg);
 
   // Update
   var dots = svg.selectAll(".dot")
@@ -141,10 +124,7 @@ function plotOrdLin(svg, data, xKey, yKey) {
       .range([height, 0])
       .domain([0, d3.max(data, function(d) { return yKey(d); })]);
 
-  xAxis.scale(x);
-  yAxis.scale(y);
-  xAxisG.call(xAxis);
-  yAxisG.call(yAxis);
+  updateAxes(x, y, svg);
 
   // Update
   var bars = svg.selectAll(".bar")
@@ -153,7 +133,7 @@ function plotOrdLin(svg, data, xKey, yKey) {
       .attr("width", x.rangeBand());
 
   // Enter
-  bars.enter().append("rect")
+  bars.enter().append("rect")  //TODO: transition
       .attr("class", "bar")
       .attr("x", function(d) { return x(xKey(d)); })
       .attr("y", function(d) { return y(yKey(d)); })
@@ -162,6 +142,34 @@ function plotOrdLin(svg, data, xKey, yKey) {
 
   // Remove
   bars.exit().remove();
+}
+
+function updateAxes(xScale, yScale, svg) {
+  var xAxis = d3.svg.axis()
+      .orient("bottom")
+      .scale(xScale);
+
+  var yAxis = d3.svg.axis()
+      .orient("left")
+      .scale(yScale);
+
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis);
+};
+
+function clear(svg) {
+    svg.selectAll("*")
+        .transition()
+        .duration(1000)
+        .attr("cx", 0)
+        .attr("x", 0)
+        .remove();
 }
 
 </script>
