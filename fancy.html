@@ -61,7 +61,7 @@ d3.tsv("./data.tsv", function(error, data) {
   //TODO: convert it all to a set of classes
 
   (function change() {
-    clear(svg.select(".plot"));
+    clear(svg.selectAll(".plot"));
     i = ++i % configs.length;  //TODO: use a circular array iterator
     conf = configs[i];
     plot(
@@ -77,7 +77,8 @@ d3.tsv("./data.tsv", function(error, data) {
 
 function plot(svg, data, type, xKey, yKey) {
   var plot = svg.append("g")
-      .attr("class", "plot");
+      .attr("class", "plot")
+      .attr("transform", "translate(" + (- width - margin.left - margin.right) + ", 0)");
 
   //TODO: automatic data type discovery, auto aggregates
   switch (type) {
@@ -88,6 +89,9 @@ function plot(svg, data, type, xKey, yKey) {
       plotLinOrd(plot, data, xKey, yKey);
       break;
   }
+  plot.transition()
+      .duration(1000)
+      .attr("transform", "0");
   //TODO: transitions, clickable axes, clickable chart? (switching chart type?)
 }
 
